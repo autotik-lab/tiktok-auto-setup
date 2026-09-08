@@ -34,11 +34,12 @@ try {
   # 1. 環境の確認
   Step "環境を確認します"
   if ($env:OS -ne "Windows_NT") { Fail "このコマンドは Windows 用です。" "Mac の方は会員サイトの Mac 用コマンドをターミナルに貼ってください" }
+  if ($env:PROCESSOR_ARCHITECTURE -eq "ARM64" -or $env:PROCESSOR_ARCHITEW6432 -eq "ARM64") { Fail "この PC（ARM 版 Windows）は対応外です。" "Windows 64bit（x64）の PC で実行してください" }
   if ($PSVersionTable.PSVersion.Major -lt 5) { Fail "PowerShell が古すぎます（5.1 以上が必要）。" "Windows Update を実行するか、PowerShell 7（https://aka.ms/powershell）を入れてください" }
   if (-not $Token) { Fail "取得キーがありません。" "会員サイトのコマンドを、末尾まで含めてそのままコピーして貼り直してください" }
   if ($Token -match "[<>]") { Fail "取得キーがプレースホルダのままです。" "会員サイトに表示されているコマンドをそのまま貼ってください" }
   $drive = (Get-Item $HOME).PSDrive
-  if ($drive -and $drive.Free -lt ($MinFreeGB * 1GB)) { Fail "空き容量が足りません（$MinFreeGB GB 以上必要）。" "不要なファイルを消してから貼り直してください" }
+  if ($drive -and $null -ne $drive.Free -and $drive.Free -lt ($MinFreeGB * 1GB)) { Fail "空き容量が足りません（$MinFreeGB GB 以上必要）。" "不要なファイルを消してから貼り直してください" }
   try { [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12 } catch {}
   try { Invoke-WebRequest -Uri "https://api.github.com" -UseBasicParsing -TimeoutSec 15 | Out-Null }
   catch { Fail "インターネットに接続できません。" "Wi-Fi やプロキシの設定を確認してから、同じコマンドを貼り直してください" }
@@ -60,7 +61,7 @@ try {
   # 3. 展開（既存フォルダには上書き。data\・参照ファイル・.env・.venv は zip に無いので残る）
   Step "$Dest に展開します"
   $before = ""
-  if (Test-Path (Join-Path $Dest "VERSION")) { $before = (Get-Content (Join-Path $Dest "VERSION") -Raw).Trim() }
+  if (Test-Path (Join-Path $Dest "VERSION")) { $before = [IO.File]::ReadAllText((Join-Path $Dest "VERSION"), [Text.Encoding]::UTF8).Trim() }
   if (Test-Path $TmpDir) { Remove-Item $TmpDir -Recurse -Force }
   Expand-Archive -Path $TmpZip -DestinationPath $TmpDir -Force
   $src = Get-ChildItem $TmpDir -Directory | Select-Object -First 1
@@ -79,31 +80,34 @@ try {
   Remove-Item $TmpDir -Recurse -Force
   if (-not (Test-Path (Join-Path $Dest "install.ps1"))) { Fail "展開後に install.ps1 が見つかりません。" "同じコマンドを貼り直してください" }
   [System.IO.File]::WriteAllText((Join-Path $Dest ".kit-token"), $Token + "`n", (New-Object System.Text.UTF8Encoding $false))
-  $after = (Get-Content (Join-Path $Dest "VERSION") -Raw).Trim()
+  $after = [IO.File]::ReadAllText((Join-Path $Dest "VERSION"), [Text.Encoding]::UTF8).Trim()
   if ($before) { Say "OK: 展開（更新 $before -> ${after}）" } else { Say "OK: 展開（VERSION ${after}）" }
 
   # 4. 一括導入
-  Step "一括導入を実行します（初回は数分かかります。画面が止まって見えても待ってください）"
+  Step "一括導入を実行します（初回は 10 分以上かかることがあります。画面が止まって見えても閉じずに待ってください）"
   & powershell -ExecutionPolicy Bypass -File (Join-Path $Dest "install.ps1")
   if ($LASTEXITCODE -ne 0) { Fail "一括導入で NG がありました。" "上に表示された -> の案内に従って直し、同じコマンドを貼り直してください（直っていれば続きから進みます）" }
 
   # 5. .env（API キーの置き場所）。未記入なら開く
   Step "仕上げ"
   $envFile = Join-Path $Dest ".env"
-  $needKey = (Test-Path $envFile) -and ((Get-Content $envFile -Raw) -match "PEXELS_API_KEY=ここに貼る")
+  # PowerShell 5.1 の Get-Content は BOM 無し UTF-8 を ANSI として読むので、UTF-8 を明示して読む（5.1 / 7 共通）
+  $needKey = (Test-Path $envFile) -and (([IO.File]::ReadAllText($envFile, [Text.Encoding]::UTF8)) -match "PEXELS_API_KEY=ここに貼る")
   if ($needKey) {
-    Start-Process notepad.exe $envFile
+    Start-Process notepad.exe -ArgumentList "`"$envFile`""
     Say ""
     Say "導入完了。メモ帳で .env が開きました。"
     Say "次にやること:"
     Say "  1. https://www.pexels.com/api/ でアカウントを作り『Your API Key』をコピー"
     Say "  2. 開いたファイルの PEXELS_API_KEY=ここに貼る の「ここに貼る」をそのキーに置き換えて保存（前後に空白や引用符を入れない）"
     Say "  3. Claude Desktop の Code タブで $Dest を開き、会員サイトの指示文 1-1 を貼る"
+    Say "     Claude Desktop をすでに開いている場合は、一度完全に終了してから開き直してください（新しく入れた道具を認識させるため）"
   } else {
     Say ""
     if ($before -and $before -ne $after) { Say "更新完了（$before -> ${after}）。参照ファイル・投稿ログ・.env はそのまま残っています。" }
     else { Say "導入完了（VERSION ${after}）。.env は記入済みです。" }
     Say "次にやること: Claude Desktop の Code タブで $Dest を開き、会員サイトの指示文を貼る"
+    Say "  Claude Desktop をすでに開いている場合は、一度完全に終了してから開き直してください（新しく入れた道具を認識させるため）"
   }
 } catch {
   Fail ("予期しないエラー: " + $_.Exception.Message) "同じコマンドを貼り直してください。繰り返す場合はこの画面の内容を添えて問い合わせてください"

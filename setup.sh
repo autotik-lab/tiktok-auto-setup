@@ -89,6 +89,7 @@ main() {
     say "  3. Claude Desktop の Code タブで次のフォルダを開き、会員サイトの指示文 1-1 を貼る"
     say "     ${DEST}"
     say "     （フォルダ選択の画面で ⌘+Shift+G を押し、~/tiktok-auto と入力すると開けます）"
+    say "     Claude Desktop をすでに開いている場合は、一度完全に終了してから開き直してください（新しく入れた道具を認識させるため）"
   else
     say ""
     if [ -n "$before" ] && [ "$before" != "$after" ]; then
@@ -97,6 +98,7 @@ main() {
       say "導入完了（VERSION ${after}）。.env は記入済みです。"
     fi
     say "次にやること: Claude Desktop の Code タブで ${DEST} を開き（⌘+Shift+G → ~/tiktok-auto）、会員サイトの指示文を貼る"
+    say "  Claude Desktop をすでに開いている場合は、一度完全に終了してから開き直してください（新しく入れた道具を認識させるため）"
   fi
 }
 

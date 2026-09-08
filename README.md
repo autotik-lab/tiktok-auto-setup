@@ -34,3 +34,5 @@ powershell -ExecutionPolicy Bypass -Command "& ([scriptblock]::Create((irm https
 - `main` は保護し、組織メンバー以外が変更できないようにする
 - ここにはスクリプトと本 README 以外を置かない（キットの説明・設計・ノウハウは入れない）
 - 開発元は `フロントシステム/tiktok-auto-setup/`。変更したらここへ push する
+- `setup.ps1` は **BOM 無し UTF-8** で保存する（`irm` が文字列として取得して `[scriptblock]::Create` に渡すため、BOM があると先頭に不可視文字が混ざる。`-File` で実行する `install.ps1` は逆に BOM 付きが必須）。ファイル内でファイルを読むときは PowerShell 5.1 の `Get-Content` が BOM 無し UTF-8 を ANSI として読むので `[IO.File]::ReadAllText(path, [Text.Encoding]::UTF8)` を使う
+- 動作要件は Windows 10 / 11 の 64bit（x64）。ARM 版 Windows は依存パッケージに ARM64 用 wheel が無いため対応外（setup.ps1 が環境確認で止める）
