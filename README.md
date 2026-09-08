@@ -29,7 +29,7 @@ powershell -ExecutionPolicy Bypass -Command "& ([scriptblock]::Create((irm https
 
 同じコマンドを貼り直しても壊れません。途中で止まった場合は表示された案内に従って貼り直してください。
 
-## 運営メモ
+## 開発者メモ
 
 - `main` は保護し、組織メンバー以外が変更できないようにする
 - ここにはスクリプトと本 README 以外を置かない（キットの説明・設計・ノウハウは入れない）
