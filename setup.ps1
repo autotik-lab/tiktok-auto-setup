@@ -1,4 +1,4 @@
-﻿# tiktok-auto-kit 導入スクリプト（Windows）
+# tiktok-auto-kit 導入スクリプト（Windows）
 #
 #   powershell -ExecutionPolicy Bypass -Command "& ([scriptblock]::Create((irm https://raw.githubusercontent.com/autotik-lab/tiktok-auto-setup/main/setup.ps1))) <取得キー>"
 #
@@ -51,7 +51,7 @@ try {
   } catch {
     $code = 0
     try { $code = [int]$_.Exception.Response.StatusCode } catch {}
-    if ($code -in 401, 403, 404) { Fail "取得キーが無効か、取得先が変わっています（HTTP $code）。" "会員サイトの最新のコマンドをコピーして貼り直してください。それでも出る場合は会員サイトの「お知らせ」を確認してください" }
+    if ($code -in 401, 403, 404) { Fail "取得キーが無効か、取得先が変わっています（HTTP ${code}）。" "会員サイトの最新のコマンドをコピーして貼り直してください。それでも出る場合は会員サイトの「お知らせ」を確認してください" }
     Fail "ダウンロードに失敗しました。" "少し待ってから、同じコマンドを貼り直してください"
   }
   if (-not (Test-Path $TmpZip) -or (Get-Item $TmpZip).Length -lt 100000) { Fail "取得したファイルが壊れています。" "同じコマンドを貼り直してください" }
@@ -80,7 +80,7 @@ try {
   if (-not (Test-Path (Join-Path $Dest "install.ps1"))) { Fail "展開後に install.ps1 が見つかりません。" "同じコマンドを貼り直してください" }
   [System.IO.File]::WriteAllText((Join-Path $Dest ".kit-token"), $Token + "`n", (New-Object System.Text.UTF8Encoding $false))
   $after = (Get-Content (Join-Path $Dest "VERSION") -Raw).Trim()
-  if ($before) { Say "OK: 展開（更新 $before -> $after）" } else { Say "OK: 展開（VERSION $after）" }
+  if ($before) { Say "OK: 展開（更新 $before -> ${after}）" } else { Say "OK: 展開（VERSION ${after}）" }
 
   # 4. 一括導入
   Step "一括導入を実行します（初回は数分かかります。画面が止まって見えても待ってください）"
@@ -101,8 +101,8 @@ try {
     Say "  3. Claude Desktop の Code タブで $Dest を開き、会員サイトの指示文 1-1 を貼る"
   } else {
     Say ""
-    if ($before -and $before -ne $after) { Say "更新完了（$before -> $after）。参照ファイル・投稿ログ・.env はそのまま残っています。" }
-    else { Say "導入完了（VERSION $after）。.env は記入済みです。" }
+    if ($before -and $before -ne $after) { Say "更新完了（$before -> ${after}）。参照ファイル・投稿ログ・.env はそのまま残っています。" }
+    else { Say "導入完了（VERSION ${after}）。.env は記入済みです。" }
     Say "次にやること: Claude Desktop の Code タブで $Dest を開き、会員サイトの指示文を貼る"
   }
 } catch {
