@@ -44,6 +44,8 @@ try {
   try { Invoke-WebRequest -Uri "https://api.github.com" -UseBasicParsing -TimeoutSec 15 | Out-Null }
   catch { Fail "インターネットに接続できません。" "Wi-Fi やプロキシの設定を確認してから、同じコマンドを貼り直してください" }
   Say "OK: Windows / PowerShell $($PSVersionTable.PSVersion) / 空き容量 / 接続"
+  # Git for Windows は Claude Desktop の Code タブに必須（導入自体には不要なので止めない）
+  if (-not (Get-Command git -ErrorAction SilentlyContinue)) { Write-Host "注意: git が見つかりません。Claude Desktop の Code タブには Git for Windows（https://git-scm.com/download/win）が必要です。導入後に Claude Desktop を再起動してください" -ForegroundColor Yellow }
 
   # 2. 取得
   Step "キットを取得します（約 5 MB）"
