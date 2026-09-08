@@ -51,9 +51,9 @@ main() {
   http=$(curl -sL -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" -o "$TMP_ZIP" -w '%{http_code}' "$ZIP_URL" </dev/null) || http="000"
   case "$http" in
     200) ;;
-    401|403|404) fail "取得キーが無効か、取得先が変わっています（HTTP $http）。" "会員サイトの最新のコマンドをコピーして貼り直してください。それでも出る場合は会員サイトの「お知らせ」を確認してください";;
+    401|403|404) fail "取得キーが無効か、取得先が変わっています（HTTP ${http}）。" "会員サイトの最新のコマンドをコピーして貼り直してください。それでも出る場合は会員サイトの「お知らせ」を確認してください";;
     000) fail "ダウンロード中に接続が切れました。" "少し待ってから、同じコマンドを貼り直してください";;
-    *)   fail "ダウンロードに失敗しました（HTTP $http）。" "少し待ってから、同じコマンドを貼り直してください";;
+    *)   fail "ダウンロードに失敗しました（HTTP ${http}）。" "少し待ってから、同じコマンドを貼り直してください";;
   esac
   tar -tf "$TMP_ZIP" >/dev/null 2>&1 || fail "取得したファイルが壊れています。" "同じコマンドを貼り直してください"
   say "OK: 取得"
@@ -69,7 +69,7 @@ main() {
   printf '%s\n' "$TOKEN" > "$DEST/.kit-token" && chmod 600 "$DEST/.kit-token"
   local after
   after=$(tr -d '[:space:]' < "$DEST/VERSION")
-  if [ -n "$before" ]; then say "OK: 展開（更新 $before → $after）"; else say "OK: 展開（VERSION $after）"; fi
+  if [ -n "$before" ]; then say "OK: 展開（更新 $before → ${after}）"; else say "OK: 展開（VERSION ${after}）"; fi
 
   # 4. 一括導入（uv → Python 3.11 → 依存 → .env の雛形 → 参照ファイルの空枠 → data/ → 許可ルール → 導入チェック）
   step "一括導入を実行します（初回は数分かかります。画面が止まって見えても待ってください）"
@@ -90,9 +90,9 @@ main() {
   else
     say ""
     if [ -n "$before" ] && [ "$before" != "$after" ]; then
-      say "更新完了（$before → $after）。参照ファイル・投稿ログ・.env はそのまま残っています。"
+      say "更新完了（$before → ${after}）。参照ファイル・投稿ログ・.env はそのまま残っています。"
     else
-      say "導入完了（VERSION $after）。.env は記入済みです。"
+      say "導入完了（VERSION ${after}）。.env は記入済みです。"
     fi
     say "次にやること: Claude Desktop の Code タブで ~/tiktok-auto を開き、会員サイトの指示文を貼る"
   fi
