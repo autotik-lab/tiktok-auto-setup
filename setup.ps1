@@ -50,7 +50,7 @@ try {
   # 2. 取得
   Step "キットを取得します（約 5 MB）"
   try {
-    Invoke-WebRequest -Uri $ZipUrl -Headers @{ Authorization = "Bearer $Token"; Accept = "application/vnd.github+json"; "User-Agent" = "tiktok-auto-setup" } -OutFile $TmpZip -UseBasicParsing -TimeoutSec 120
+    Invoke-WebRequest -Uri $ZipUrl -Headers @{ Authorization = "Bearer $Token"; Accept = "application/vnd.github+json" } -UserAgent "tiktok-auto-setup" -OutFile $TmpZip -UseBasicParsing -TimeoutSec 120
   } catch {
     $code = 0
     try { $code = [int]$_.Exception.Response.StatusCode } catch {}
@@ -83,7 +83,7 @@ try {
   if (-not (Test-Path (Join-Path $Dest "install.ps1"))) { Fail "展開後に install.ps1 が見つかりません。" "同じコマンドを貼り直してください" }
   [System.IO.File]::WriteAllText((Join-Path $Dest ".kit-token"), $Token + "`n", (New-Object System.Text.UTF8Encoding $false))
   $after = [IO.File]::ReadAllText((Join-Path $Dest "VERSION"), [Text.Encoding]::UTF8).Trim()
-  if ($before) { Say "OK: 展開（更新 $before -> ${after}）" } else { Say "OK: 展開（VERSION ${after}）" }
+  if ($before -and $before -ne $after) { Say "OK: 展開（更新 $before -> ${after}）" } else { Say "OK: 展開（VERSION ${after}）" }
 
   # 4. 一括導入
   Step "一括導入を実行します（初回は 10 分以上かかることがあります。画面が止まって見えても閉じずに待ってください）"
@@ -112,5 +112,7 @@ try {
     Say "  Claude Desktop をすでに開いている場合は、一度完全に終了してから開き直してください（新しく入れた道具を認識させるため）"
   }
 } catch {
-  Fail ("予期しないエラー: " + $_.Exception.Message) "同じコマンドを貼り直してください。繰り返す場合はこの画面の内容を添えて問い合わせてください"
+  $msg = $_.Exception.Message
+  if (-not $msg) { $msg = "$_" }
+  Fail ("予期しないエラー: " + $msg) "同じコマンドを貼り直してください。繰り返す場合はこの画面の内容を添えて問い合わせてください"
 }

@@ -69,7 +69,7 @@ main() {
   printf '%s\n' "$TOKEN" > "$DEST/.kit-token" && chmod 600 "$DEST/.kit-token"
   local after
   after=$(tr -d '[:space:]' < "$DEST/VERSION")
-  if [ -n "$before" ]; then say "OK: 展開（更新 $before → ${after}）"; else say "OK: 展開（VERSION ${after}）"; fi
+  if [ -n "$before" ] && [ "$before" != "$after" ]; then say "OK: 展開（更新 $before → ${after}）"; else say "OK: 展開（VERSION ${after}）"; fi
 
   # 4. 一括導入（uv → Python 3.11 → 依存 → .env の雛形 → 参照ファイルの空枠 → data/ → 許可ルール → 導入チェック）
   step "一括導入を実行します（初回は数分かかります。画面が止まって見えても待ってください）"
