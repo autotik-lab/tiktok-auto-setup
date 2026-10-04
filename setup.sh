@@ -74,18 +74,24 @@ main() {
   # 4. 一括導入（uv → Python 3.11 → 依存 → .env の雛形 → 参照ファイルの空枠 → data/ → 許可ルール → 導入チェック）
   step "一括導入を実行します（初回は数分かかります。画面が止まって見えても待ってください）"
   if ! bash "$DEST/install.sh" </dev/null; then
-    fail "一括導入で NG がありました。" "上に表示された → の案内に従って直し、同じコマンドを貼り直してください（直っていれば続きから進みます）"
+    fail "一括導入で NG がありました。" "上に出たエラーを確認して直し、同じコマンドを貼り直してください（直っていれば続きから進みます）。原因が分からないときは、この画面の内容を添えて問い合わせてください"
   fi
 
-  # 5. .env（API キーの置き場所）。未記入なら開く
+  # 5. .env（API キーの置き場所）。動画素材のキー（Pexels・Pixabay のどちらか一方でよい）が未記入なら開く
   step "仕上げ"
-  if grep -q 'PEXELS_API_KEY=ここに貼る' "$DEST/.env" 2>/dev/null; then
+  local pixabay_filled=0
+  # [^[:space:]] にする（. は CR にも当たるので、CRLF の .env の空欄 `PIXABAY_API_KEY=` を記入済みと誤判定する）
+  if grep -Eq '^PIXABAY_API_KEY=[^[:space:]]' "$DEST/.env" 2>/dev/null && ! grep -q 'PIXABAY_API_KEY=ここに貼る' "$DEST/.env" 2>/dev/null; then pixabay_filled=1; fi
+  if grep -q 'PEXELS_API_KEY=ここに貼る' "$DEST/.env" 2>/dev/null && [ $pixabay_filled -eq 0 ]; then
     open -e "$DEST/.env" 2>/dev/null || true
     say ""
     say "導入完了。テキストエディタで .env が開きました。"
     say "次にやること:"
-    say "  1. https://www.pexels.com/api/ でアカウントを作り『Your API Key』をコピー"
-    say "  2. 開いたファイルの PEXELS_API_KEY=ここに貼る の「ここに貼る」をそのキーに置き換えて保存（前後に空白や引用符を入れない）"
+    say "  1. 動画素材サイトの API キーを 1 つ用意する（無料。Pexels か Pixabay のどちらか一方でよい）"
+    say "     Pexels : https://www.pexels.com/api/ でアカウントを作り『Your API Key』をコピー（新規発行が止まっていて出せないときは Pixabay へ）"
+    say "     Pixabay: https://pixabay.com でアカウントを作り（確認メールも済ませる）、ページ下の言語を English に切り替えてから"
+    say "              https://pixabay.com/api/docs/ を開き、Parameters の表の key の行に出る『Your API key』をコピー"
+    say "  2. 開いたファイルの PEXELS_API_KEY=ここに貼る（Pixabay なら PIXABAY_API_KEY=ここに貼る）の「ここに貼る」をそのキーに置き換えて保存（前後に空白や引用符を入れない）"
     say "  3. Claude Desktop の Code タブで次のフォルダを開き、会員サイトの指示文 1-1 を貼る"
     say "     ${DEST}"
     say "     （フォルダ選択の画面で ⌘+Shift+G を押し、~/tiktok-auto と入力すると開けます）"

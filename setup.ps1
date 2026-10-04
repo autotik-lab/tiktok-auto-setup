@@ -88,20 +88,26 @@ try {
   # 4. 一括導入
   Step "一括導入を実行します（初回は 10 分以上かかることがあります。画面が止まって見えても閉じずに待ってください）"
   & powershell -ExecutionPolicy Bypass -File (Join-Path $Dest "install.ps1")
-  if ($LASTEXITCODE -ne 0) { Fail "一括導入で NG がありました。" "上に表示された -> の案内に従って直し、同じコマンドを貼り直してください（直っていれば続きから進みます）" }
+  if ($LASTEXITCODE -ne 0) { Fail "一括導入で NG がありました。" "上に出たエラーを確認して直し、同じコマンドを貼り直してください（直っていれば続きから進みます）。原因が分からないときは、この画面の内容を添えて問い合わせてください" }
 
-  # 5. .env（API キーの置き場所）。未記入なら開く
+  # 5. .env（API キーの置き場所）。動画素材のキー（Pexels・Pixabay のどちらか一方でよい）が未記入なら開く
   Step "仕上げ"
   $envFile = Join-Path $Dest ".env"
   # PowerShell 5.1 の Get-Content は BOM 無し UTF-8 を ANSI として読むので、UTF-8 を明示して読む（5.1 / 7 共通）
-  $needKey = (Test-Path $envFile) -and (([IO.File]::ReadAllText($envFile, [Text.Encoding]::UTF8)) -match "PEXELS_API_KEY=ここに貼る")
+  $envText = if (Test-Path $envFile) { [IO.File]::ReadAllText($envFile, [Text.Encoding]::UTF8) } else { "" }
+  # \S にする（. は CR にも当たるので、CRLF の .env の空欄 `PIXABAY_API_KEY=` を記入済みと誤判定する）
+  $pixabayFilled = ($envText -match "(?m)^PIXABAY_API_KEY=\S") -and -not ($envText -match "PIXABAY_API_KEY=ここに貼る")
+  $needKey = (Test-Path $envFile) -and ($envText -match "PEXELS_API_KEY=ここに貼る") -and -not $pixabayFilled
   if ($needKey) {
     Start-Process notepad.exe -ArgumentList "`"$envFile`""
     Say ""
     Say "導入完了。メモ帳で .env が開きました。"
     Say "次にやること:"
-    Say "  1. https://www.pexels.com/api/ でアカウントを作り『Your API Key』をコピー"
-    Say "  2. 開いたファイルの PEXELS_API_KEY=ここに貼る の「ここに貼る」をそのキーに置き換えて保存（前後に空白や引用符を入れない）"
+    Say "  1. 動画素材サイトの API キーを 1 つ用意する（無料。Pexels か Pixabay のどちらか一方でよい）"
+    Say "     Pexels : https://www.pexels.com/api/ でアカウントを作り『Your API Key』をコピー（新規発行が止まっていて出せないときは Pixabay へ）"
+    Say "     Pixabay: https://pixabay.com でアカウントを作り（確認メールも済ませる）、ページ下の言語を English に切り替えてから"
+    Say "              https://pixabay.com/api/docs/ を開き、Parameters の表の key の行に出る『Your API key』をコピー"
+    Say "  2. 開いたファイルの PEXELS_API_KEY=ここに貼る（Pixabay なら PIXABAY_API_KEY=ここに貼る）の「ここに貼る」をそのキーに置き換えて保存（前後に空白や引用符を入れない）"
     Say "  3. Claude Desktop の Code タブで $Dest を開き、会員サイトの指示文 1-1 を貼る"
     Say "     Claude Desktop をすでに開いている場合は、一度完全に終了してから開き直してください（新しく入れた道具を認識させるため）"
   } else {
